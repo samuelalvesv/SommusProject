@@ -1,8 +1,8 @@
 namespace SommusProject.Models;
 
-public class DengueAlert
+public class AlertDengue
 {
-    private DengueAlert() { }
+    private AlertDengue() { }
     
     public int SE { get; private set; }
     public int Casos { get; private set; }
@@ -16,7 +16,7 @@ public class DengueAlert
     public double PRt1 { get; private set; }
     public string VersaoModelo { get; private set; }
     
-    public DengueAlert(int se, int casos, double casosEst, double casosEstMax, double casosEstMin, DateTime dataIniSe, string id, int nivel, double pInd100K, double pRt1, string versaoModelo)
+    public AlertDengue(int se, int casos, double casosEst, double casosEstMax, double casosEstMin, DateTime dataIniSe, string id, int nivel, double pInd100K, double pRt1, string versaoModelo)
     {
         SE = se;
         Casos = casos;

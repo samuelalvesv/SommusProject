@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using SommusProject.Models;
 using SommusProject.Options;
+using SommusProject.Repositories;
 
 namespace SommusProject.Services;
 
@@ -10,13 +11,17 @@ public class AlertDengueService
 {
     private readonly HttpClient _httpClient;
     private readonly AlertDengueOptions _options;
-    public AlertDengueService(HttpClient httpClient, IOptions<AlertDengueOptions> options)
+    private readonly AlertDengueRepository _repository;
+    public AlertDengueService(HttpClient httpClient, 
+        IOptions<AlertDengueOptions> options,
+        AlertDengueRepository repository)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _repository = repository;
     }
     
-    public async Task<IEnumerable<DengueAlert>?> GetDengueAlerts()
+    public async Task<IEnumerable<AlertDengue>?> GetDengueAlerts()
     {
         try
         {
@@ -65,7 +70,7 @@ public class AlertDengueService
         return $"{_options.UrlBase}?{consulta}";
     }
 
-    private async Task<IEnumerable<DengueAlert>?> ObterDados(string url)
+    private async Task<IEnumerable<AlertDengue>?> ObterDados(string url)
     {
         try
         {
@@ -81,7 +86,7 @@ public class AlertDengueService
             if (string.IsNullOrWhiteSpace(conteudo))
                 return [];
 
-            return JsonSerializer.Deserialize<IEnumerable<DengueAlert>>(conteudo);
+            return JsonSerializer.Deserialize<IEnumerable<AlertDengue>>(conteudo);
         }
         catch (OperationCanceledException)
         {
