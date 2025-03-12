@@ -1,0 +1,6 @@
+@SommusProject_HostAddress = http://localhost:5079
+
+GET {{SommusProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
