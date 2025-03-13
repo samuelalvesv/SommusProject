@@ -21,7 +21,7 @@ public class AlertDengueService
         _repository = repository;
     }
     
-    public async Task<IEnumerable<AlertDengue>?> GetDengueAlerts()
+    public async Task<IEnumerable<AlertDengue>?> GetAlertsDengue()
     {
         try
         {

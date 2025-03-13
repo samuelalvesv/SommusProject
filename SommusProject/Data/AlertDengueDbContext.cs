@@ -14,6 +14,8 @@ public class AlertDengueDbContext : IDisposable
         _connection.Open();
     }
     
+    public IDbConnection Connection() => _connection;
+    
     public void Dispose()
     {
         _connection?.Dispose();
