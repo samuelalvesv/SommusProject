@@ -1,3 +1,4 @@
+using Dapper;
 using Dapper.Contrib.Extensions;
 using SommusProject.Data;
 using SommusProject.Models;
@@ -16,12 +17,38 @@ public class AlertDengueRepository : IAlertDengueRepository
         _context = context;
         _logger = logger;
     }
+    
+    public async Task<IEnumerable<AlertDengue>> GetAllAlertsDengue()
+    {
+        try
+        {
+            return await _context.Connection().GetAllAsync<AlertDengue>();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao obter alertas de dengue: {Mensagem}", e.Message);
+            throw;
+        }
+    }
+    
+    public async Task<IEnumerable<long>> GetAllAlertsDengueId()
+    {
+        try
+        {
+            return await _context.Connection().QueryAsync<long>("SELECT Identificador FROM ALERTA_DENGUE");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao obter IDs de alertas de dengue: {Mensagem}", e.Message);
+            throw;
+        }
+    }
 
     public async Task<bool> SalvarAlertasDengue(List<AlertDengue> alertsDengues)
     {
-        if (alertsDengues?.Count > 0 == false)
-            throw new ArgumentNullException(nameof(alertsDengues));; 
-        
+        if (alertsDengues.Count > 0 == false)
+            throw new ArgumentNullException(nameof(alertsDengues));
+
         try
         {
             var linhasAferadas = await _context.Connection().InsertAsync(alertsDengues);

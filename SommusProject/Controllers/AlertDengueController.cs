@@ -10,11 +10,11 @@ namespace SommusProject.Controllers;
 [Route("[controller]")]
 public class AlertDengueController : ControllerBase
 {
-    private readonly AlertDengueService _dengueService;
-    private readonly AlertDengueRepository _repository;
+    private readonly IAlertDengueService _dengueService;
+    private readonly IAlertDengueRepository _repository;
     private readonly ILogger<AlertDengueController> _logger;
-    public AlertDengueController(AlertDengueService dengueService,
-        AlertDengueRepository repository,
+    public AlertDengueController(IAlertDengueService dengueService,
+        IAlertDengueRepository repository,
         ILogger<AlertDengueController> logger)
     {
         _dengueService = dengueService;
@@ -22,9 +22,9 @@ public class AlertDengueController : ControllerBase
         _logger = logger;
     }
     
-    private ObjectResult ProcessarErro(Exception ex, string mensagem)
+    private ObjectResult ProcessarErro(Exception e, string mensagem)
     {
-        _logger.LogError(ex, "{Mensagem}: {ExceptionMessage}", mensagem, ex.Message);
+        _logger.LogError(e, "{Mensagem}: {ExceptionMessage}", mensagem, e.Message);
         return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.");
     }
 
@@ -32,13 +32,13 @@ public class AlertDengueController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<AlertDengue>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<AlertDengue>>> GetService()
+    public async Task<ActionResult<IEnumerable<AlertDengue>>> GetAlertsDengue()
     {
         try
         {
             var alerts = await _dengueService.GetAlertsDengue();
             
-            return alerts?.Any() == true ? Ok(alerts) : NotFound("Nenhum dado encontrado.");
+            return alerts?.Any() ?? false ? Ok(alerts) : NotFound("Nenhum dado encontrado.");
         }
         catch (Exception e)
         {
@@ -51,14 +51,14 @@ public class AlertDengueController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> SaveService()
+    public async Task<IActionResult> ImportAlertsDengue()
     {
         try
         {
-            var alerts = (await _dengueService.GetAlertsDengue())?.ToList();
+            var alerts = (await _dengueService.GetNewAlertsDengue())?.ToList();
             
             if (alerts?.Count > 0 == false)
-                return NotFound("Nenhum dado encontrado.");
+                return NotFound("Nenhum novo alerta dengue para ser cadastrado.");
             
             var resultado = await _repository.SalvarAlertasDengue(alerts);
             
@@ -72,7 +72,7 @@ public class AlertDengueController : ControllerBase
             return ProcessarErro(e, "Erro ao consultar e salvar alertas de dengue.");
         }
     }
-    
+
     [HttpGet("GetByWeek")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AlertDengue))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -82,16 +82,7 @@ public class AlertDengueController : ControllerBase
     {
         try
         {
-            if (ey < 1000 || ey > 9999)
-            {
-                throw new ArgumentException("Ano inválido. O ano deve ter exatamente 4 dígitos.");
-            }
-        
-            var semanasNoAno = ISOWeek.GetWeeksInYear(ey);
-            if (ew < 1 || ew > semanasNoAno)
-            {
-                throw new ArgumentException($"Semana epidemiológica inválida para o ano {ey}. A semana deve estar entre 1 e {semanasNoAno}.");
-            }
+            ValidarSemanaAno(ew, ey);
             
             var alert = await _repository.ConsultarPorSemanaAno(ew, ey);
 
@@ -104,6 +95,20 @@ public class AlertDengueController : ControllerBase
         catch (Exception e)
         {
             return ProcessarErro(e, $"Erro ao consultar alerta para semana {ew} do ano {ey}");
+        }
+    }
+
+    private void ValidarSemanaAno(int ew, int ey)
+    {
+        if (ey < 1000 || ey > 9999)
+        {
+            throw new ArgumentException("Ano inválido. O ano deve ter exatamente 4 dígitos.");
+        }
+        
+        var semanasNoAno = ISOWeek.GetWeeksInYear(ey);
+        if (ew < 1 || ew > semanasNoAno)
+        {
+            throw new ArgumentException($"Semana epidemiológica inválida para o ano {ey}. A semana deve estar entre 1 e {semanasNoAno}.");
         }
     }
 }

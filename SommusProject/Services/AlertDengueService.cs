@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using SommusProject.Models;
 using SommusProject.Options;
@@ -7,28 +8,58 @@ using SommusProject.Repositories;
 
 namespace SommusProject.Services;
 
-public class AlertDengueService
+public class AlertDengueService : IAlertDengueService
 {
     private readonly HttpClient _httpClient;
     private readonly AlertDengueOptions _options;
-    private readonly AlertDengueRepository _repository;
-    public AlertDengueService(HttpClient httpClient, 
+    private readonly IAlertDengueRepository _repository;
+    private readonly IMemoryCache _cache;
+    public AlertDengueService(
+        HttpClient httpClient, 
         IOptions<AlertDengueOptions> options,
-        AlertDengueRepository repository)
+        IAlertDengueRepository repository,
+        IMemoryCache cache
+        )
     {
         _httpClient = httpClient;
         _options = options.Value;
         _repository = repository;
+        _cache = cache;
     }
     
     public async Task<IEnumerable<AlertDengue>?> GetAlertsDengue()
     {
         try
         {
+            string cacheKey = $"alertas_dengue_{DateTime.Now:yyyy-MM-dd}";
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<AlertDengue>? cachedAlerts))
+                return cachedAlerts;
+
             var (semanaInicial, semanaFinal, anoInicial, anoFinal) = CalcularPeriodo();
             var url = ConstruirUrl(semanaInicial, semanaFinal, anoInicial, anoFinal);
             
-            return await ObterDados(url);
+            var alerts = (await ObterDados(url))?.ToList();
+            _cache.Set(cacheKey, alerts, TimeSpan.FromHours(6));
+            return alerts;
+        }
+        catch (Exception e)
+        {
+            throw new InvalidOperationException($"Erro ao obter dados do Alerta Dengue. Detalhes: {e.Message}");
+        }
+    }
+
+    public async Task<IEnumerable<AlertDengue>?> GetNewAlertsDengue()
+    {
+        try
+        {
+            var alerts = (await GetAlertsDengue())?.ToList();
+            
+            var ids = (await _repository.GetAllAlertsDengueId()).ToList();
+            
+            if (ids.Any() == false)
+                return alerts;
+
+            return alerts?.Where(a => !ids.Contains(a.Identificador));
         }
         catch (Exception e)
         {

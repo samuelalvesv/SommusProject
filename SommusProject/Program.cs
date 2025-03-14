@@ -5,12 +5,13 @@ using SommusProject.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<AlertDengueDbContext>();
-builder.Services.AddScoped<AlertDengueRepository>();
-builder.Services.AddHttpClient<AlertDengueService>();
+builder.Services.AddScoped<IAlertDengueRepository, AlertDengueRepository>();
+builder.Services.AddHttpClient<IAlertDengueService, AlertDengueService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
