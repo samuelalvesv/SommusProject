@@ -4,7 +4,7 @@ using SommusProject.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<AlertDengueDbContext>();
+builder.Services.AddScoped<IAlertDengueDbContext, AlertDengueDbContext>();
 builder.Services.AddScoped<IAlertDengueRepository, AlertDengueRepository>();
 builder.Services.AddHttpClient<IAlertDengueService, AlertDengueService>();
 

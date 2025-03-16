@@ -7,11 +7,11 @@ namespace SommusProject.Repositories;
 
 public class AlertDengueRepository : IAlertDengueRepository
 {
-    private readonly AlertDengueDbContext _context;
+    private readonly IAlertDengueDbContext _context;
     private readonly ILogger<AlertDengueRepository> _logger;
     
     public AlertDengueRepository(
-        AlertDengueDbContext context,
+        IAlertDengueDbContext context,
         ILogger<AlertDengueRepository> logger)
     {
         _context = context;
@@ -33,9 +33,11 @@ public class AlertDengueRepository : IAlertDengueRepository
     
     public async Task<IEnumerable<long>> GetAllAlertsDengueId()
     {
+        const string sqlObterIdentificadores = "SELECT Identificador FROM ALERTA_DENGUE";
+            
         try
         {
-            return await _context.Connection().QueryAsync<long>("SELECT Identificador FROM ALERTA_DENGUE");
+            return await _context.Connection().QueryAsync<long>(sqlObterIdentificadores);
         }
         catch (Exception e)
         {

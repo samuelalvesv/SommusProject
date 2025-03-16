@@ -4,7 +4,7 @@ using MySql.Data.MySqlClient;
 
 namespace SommusProject.Data;
 
-public class AlertDengueDbContext : IDisposable
+public class AlertDengueDbContext : IAlertDengueDbContext
 {
     private readonly IDbConnection _connection;
 
@@ -12,7 +12,6 @@ public class AlertDengueDbContext : IDisposable
     {
         _connection = new MySqlConnection(
             configuration.GetConnectionString("MySqlConnection"));
-        _connection.Open();
     }
     
     public IDbConnection Connection() => _connection;
@@ -27,6 +26,6 @@ public class AlertDengueDbContext : IDisposable
     
     public void Dispose()
     {
-        _connection?.Dispose();
+        _connection.Dispose();
     }
 }
