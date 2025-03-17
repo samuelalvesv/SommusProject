@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Moq;
-using Moq.Protected;
 using SommusProject.Models;
 using SommusProject.Options;
 using SommusProject.Repositories;
@@ -43,14 +42,18 @@ public class AlertDengueServiceTests
             new() { Identificador = 2 }
         };
         
-        var cacheKey = $"alertas_dengue_{DateTime.Now:yyyy-MM-dd}";
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var cacheKey = $"alertas_dengue_{dataFixa:yyyy-MM-dd}";
         _memoryCache.Set(cacheKey, alertasMock);
         
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
         
-        var httpClient = new HttpClient();
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, _memoryCache);
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, _memoryCache, dateTimeProviderMock.Object);
         
         // Act
         var resultado = (await service.GetAlertsDengue())?.ToList();
@@ -71,27 +74,25 @@ public class AlertDengueServiceTests
             new() { Identificador = 2 }
         };
         
-        var handlerMock = new Mock<HttpMessageHandler>();
         var jsonResponse = JsonSerializer.Serialize(alertasMock);
         
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        httpClientMock
+            .Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent(jsonResponse)
             });
         
-        var httpClient = new HttpClient(handlerMock.Object);
-        
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
         
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, _memoryCache);
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, _memoryCache, dateTimeProviderMock.Object);
         
         // Act
         var resultado = await service.GetAlertsDengue();
@@ -111,29 +112,28 @@ public class AlertDengueServiceTests
             new AlertDengue { Identificador = 2 }
         };
 
-        var handlerMock = new Mock<HttpMessageHandler>();
         var jsonResponse = JsonSerializer.Serialize(alertasMock);
 
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        httpClientMock
+            .Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent(jsonResponse)
             });
 
-        var httpClient = new HttpClient(handlerMock.Object);
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
     
-        var cacheKey = $"alertas_dengue_{DateTime.Now:yyyy-MM-dd}";
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var cacheKey = $"alertas_dengue_{dataFixa:yyyy-MM-dd}";
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
 
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, memoryCache);
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, memoryCache, dateTimeProviderMock.Object);
 
         // Act
         var resultado = await service.GetAlertsDengue();
@@ -153,26 +153,23 @@ public class AlertDengueServiceTests
     public async Task GetAlertsDengue_QuandoAPIRetornaErro_DeveLancarExcecao()
     {
         // Arrange
-        var handlerMock = new Mock<HttpMessageHandler>();
-        
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        httpClientMock
+            .Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 ReasonPhrase = "Requisição inválida"
             });
         
-        var httpClient = new HttpClient(handlerMock.Object);
-        
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
         
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, _memoryCache);
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, _memoryCache, dateTimeProviderMock.Object);
         
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAlertsDengue());
@@ -183,26 +180,23 @@ public class AlertDengueServiceTests
     public async Task GetAlertsDengue_QuandoAPIRetornaRespostaVazia_DeveRetornarListaVazia()
     {
         // Arrange
-        var handlerMock = new Mock<HttpMessageHandler>();
-        
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        httpClientMock
+            .Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent("")
             });
         
-        var httpClient = new HttpClient(handlerMock.Object);
-        
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
         
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, _memoryCache);
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, _memoryCache, dateTimeProviderMock.Object);
         
         // Act
         var resultado = await service.GetAlertsDengue();
@@ -216,22 +210,19 @@ public class AlertDengueServiceTests
     public async Task GetAlertsDengue_QuandoTimeoutNaAPI_DeveLancarExcecao()
     {
         // Arrange
-        var handlerMock = new Mock<HttpMessageHandler>();
-        
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        var httpClientMock = new Mock<IHttpClientWrapper>();
+        httpClientMock
+            .Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
-        
-        var httpClient = new HttpClient(handlerMock.Object);
         
         var optionsMock = new Mock<IOptions<AlertDengueOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_options);
         
-        var service = new AlertDengueService(httpClient, optionsMock.Object, _repositoryMock.Object, _memoryCache);
+        var dateTimeProviderMock = new Mock<IDateTimeProvider>();
+        var dataFixa = new DateTime(2023, 10, 15);
+        dateTimeProviderMock.Setup(d => d.Now).Returns(dataFixa);
+        
+        var service = new AlertDengueService(httpClientMock.Object, optionsMock.Object, _repositoryMock.Object, _memoryCache, dateTimeProviderMock.Object);
         
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAlertsDengue());

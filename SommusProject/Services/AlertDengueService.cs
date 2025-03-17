@@ -10,28 +10,32 @@ namespace SommusProject.Services;
 
 public class AlertDengueService : IAlertDengueService
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientWrapper _httpClient;
     private readonly AlertDengueOptions _options;
     private readonly IAlertDengueRepository _repository;
     private readonly IMemoryCache _cache;
+    private readonly IDateTimeProvider _dateTimeProvider;
+
     public AlertDengueService(
-        HttpClient httpClient, 
+        IHttpClientWrapper httpClient, 
         IOptions<AlertDengueOptions> options,
         IAlertDengueRepository repository,
-        IMemoryCache cache
+        IMemoryCache cache,
+        IDateTimeProvider dateTimeProvider
         )
     {
         _httpClient = httpClient;
         _options = options.Value;
         _repository = repository;
         _cache = cache;
+        _dateTimeProvider = dateTimeProvider;
     }
     
     public async Task<IEnumerable<AlertDengue>?> GetAlertsDengue()
     {
         try
         {
-            string cacheKey = $"alertas_dengue_{DateTime.Now:yyyy-MM-dd}";
+            string cacheKey = $"alertas_dengue_{_dateTimeProvider.Now:yyyy-MM-dd}";
             if (_cache.TryGetValue(cacheKey, out IEnumerable<AlertDengue>? cachedAlerts))
                 return cachedAlerts;
 
@@ -69,7 +73,7 @@ public class AlertDengueService : IAlertDengueService
     
     private (int semanaInicial, int semanaFinal, int anoInicial, int anoFinal) CalcularPeriodo()
     {
-        var dataAtual = DateTime.Now;
+        var dataAtual = _dateTimeProvider.Now;
         var dataInicial = dataAtual.AddMonths(-_options.MesesRetroativos);
         
         var semanaFinal = ISOWeek.GetWeekOfYear(dataAtual);
