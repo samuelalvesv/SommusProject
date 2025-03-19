@@ -1,12 +1,19 @@
 using SommusProject.Data;
+using SommusProject.Options;
 using SommusProject.Repositories;
 using SommusProject.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<AlertDengueOptions>(builder.Configuration.GetSection("AlertDengue"));
+
 builder.Services.AddScoped<IAlertDengueDbContext, AlertDengueDbContext>();
 builder.Services.AddScoped<IAlertDengueRepository, AlertDengueRepository>();
-builder.Services.AddHttpClient<IAlertDengueService, AlertDengueService>();
+builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+
+builder.Services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>();
+
+builder.Services.AddScoped<IAlertDengueService, AlertDengueService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

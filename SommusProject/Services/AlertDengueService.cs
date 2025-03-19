@@ -73,16 +73,18 @@ public class AlertDengueService : IAlertDengueService
     
     private (int semanaInicial, int semanaFinal, int anoInicial, int anoFinal) CalcularPeriodo()
     {
+        const int emSemanas6Meses = 26;
+        
         var dataAtual = _dateTimeProvider.Now;
         var dataInicial = dataAtual.AddMonths(-_options.MesesRetroativos);
         
         var semanaFinal = ISOWeek.GetWeekOfYear(dataAtual);
-        var semanaInicial = semanaFinal - 26;
+        var semanaInicial = semanaFinal - emSemanas6Meses;
 
         if (dataAtual.Year != dataInicial.Year)
         {
             var semanasNoAnoAnterior = ISOWeek.GetWeeksInYear(dataInicial.Year);
-            semanaInicial = semanasNoAnoAnterior + semanaFinal - 26;
+            semanaInicial = semanasNoAnoAnterior + semanaFinal - emSemanas6Meses;
         }
 
         return (semanaInicial, semanaFinal, dataInicial.Year, dataAtual.Year);
